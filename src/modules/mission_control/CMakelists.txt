@@ -1,0 +1,49 @@
+cmake_minimum_required(VERSION 3.8)
+project(mission_control)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# Find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(gz-sim8 REQUIRED)
+find_package(gz-plugin2 REQUIRED)
+find_package(gz-math7 REQUIRED)
+find_package(gz-common5 REQUIRED)
+
+# Create the library
+add_library(mission_control SHARED
+  src/mission_control.cpp
+)
+
+# Include directories
+target_include_directories(mission_control PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+# Declare dependencies using ament_target_dependencies
+ament_target_dependencies(mission_control
+  rclcpp
+  geometry_msgs
+  gz-sim8
+  gz-plugin2
+  gz-math7
+  gz-common5
+)
+
+# Install targets
+install(TARGETS mission_control
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+ament_package()

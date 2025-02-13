@@ -3,7 +3,7 @@
 <package format="3">
   <name>mission_control</name>
   <version>0.0.1</version>
-  <description>Custom messages for ROS2 projects</description>
+  <description>Basic vehicle control</description>
   <maintainer email="hugobirch@hotmail.fr">Hugo Birch</maintainer>
   <license>TODO: License declaration</license>
 

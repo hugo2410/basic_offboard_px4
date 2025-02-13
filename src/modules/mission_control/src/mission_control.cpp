@@ -1,14 +1,14 @@
-#include "include/mission_control.hpp"
+#include "mission_control/mission_control.hpp"
 
 using namespace std::chrono_literals;
 
 MissionControl::MissionControl()
     : Node("mission_control_node"),
+      mission_state_("INIT"), // Initialize mission state as "INIT"
       armed_(false),
-      current_state_("INIT"),
       cruise_altitude_(50.0),
-      external_velocity_command_(nullptr),
-      external_cmd_timeout_(0.5) {
+      external_cmd_timeout_(0.5),
+      external_velocity_command_(nullptr) {
 
     RCLCPP_INFO(this->get_logger(), "Initializing node");
 
@@ -38,11 +38,15 @@ MissionControl::MissionControl()
         300ms, std::bind(&MissionControl::timerCallback, this));
 
     // Wait for services
-    while (!set_mode_client_->wait_for_service(1s)) {
+    while (rclcpp::ok() && !set_mode_client_->wait_for_service(1s)) {
         RCLCPP_INFO(this->get_logger(), "Waiting for mode setting service...");
     }
-    while (!arm_client_->wait_for_service(1s)) {
+    while (rclcpp::ok() && !arm_client_->wait_for_service(1s)) {
         RCLCPP_INFO(this->get_logger(), "Waiting for arming service...");
+    }
+
+    if (!rclcpp::ok()) {
+        return;
     }
 
     RCLCPP_INFO(this->get_logger(), "Finished initializing node");
@@ -71,4 +75,71 @@ bool MissionControl::checkExternalCmdTimeout() {
     return false;
 }
 
-void MissionControl::setMode(const std::string &
+void MissionControl::setMode(const std::string &mode) {
+    auto request = std::make_shared<mavros_msgs::srv::SetMode::Request>();
+    request->custom_mode = mode;
+
+    auto future = set_mode_client_->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(this->shared_from_this(), future) == 
+        rclcpp::FutureReturnCode::SUCCESS) {
+        auto response = future.get();
+        if (response->mode_sent) {
+            RCLCPP_INFO(this->get_logger(), "Mode changed to %s successfully.", mode.c_str());
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "Failed to set mode to %s.", mode.c_str());
+        }
+    }
+}
+
+void MissionControl::arm(bool value) {
+    auto request = std::make_shared<mavros_msgs::srv::CommandBool::Request>();
+    request->value = value;
+
+    auto future = arm_client_->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(this->shared_from_this(), future) == 
+        rclcpp::FutureReturnCode::SUCCESS) {
+        auto response = future.get();
+        if (response->success) {
+            armed_ = value;
+            RCLCPP_INFO(this->get_logger(), "Arming successful.");
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "Arming failed.");
+        }
+    }
+}
+
+void MissionControl::initializeMission() {
+    setMode("OFFBOARD");
+    rclcpp::sleep_for(4s);
+    arm(true);
+}
+
+void MissionControl::timerCallback() {
+    if (!armed_) {
+        mission_state_ = "INIT";
+        return;
+    }
+
+    auto vel_cmd = geometry_msgs::msg::TwistStamped();
+    vel_cmd.header.stamp = this->get_clock()->now();
+    vel_cmd.header.frame_id = "base_link";
+
+    if (mission_state_ == "INIT") {
+        if (current_position_.position.z < cruise_altitude_) {
+            vel_cmd.twist.linear.z = 2.0;
+        } else {
+            mission_state_ = "CRUISE";
+            RCLCPP_INFO(this->get_logger(), "Reached cruise altitude, transitioning to cruise");
+        }
+    } else if (mission_state_ == "CRUISE") {
+        if (!checkExternalCmdTimeout() && external_velocity_command_) {
+            vel_cmd.twist = external_velocity_command_->twist;
+        } else {
+            vel_cmd.twist.linear.x = 0.0;
+            vel_cmd.twist.linear.y = 0.0;
+            vel_cmd.twist.linear.z = 0.0;
+        }
+    }
+
+    vel_pub_->publish(vel_cmd);
+}

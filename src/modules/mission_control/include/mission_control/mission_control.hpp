@@ -9,7 +9,6 @@
 #include "nav_msgs/msg/odometry.hpp"
 
 #include <chrono>
-#include <memory>
 #include <string>
 
 class MissionControl : public rclcpp::Node {
@@ -19,12 +18,12 @@ public:
 private:
     // State variables
     mavros_msgs::msg::State current_state_;
-    geometry_msgs::msg::TwistStamped::SharedPtr external_velocity_command_;
-    geometry_msgs::msg::Pose current_position_;
+    std::string mission_state_;
     bool armed_;
-    std::string current_state_;
     double cruise_altitude_;
     double external_cmd_timeout_; // seconds
+    geometry_msgs::msg::TwistStamped::SharedPtr external_velocity_command_;
+    geometry_msgs::msg::Pose current_position_;
     rclcpp::Time last_external_cmd_time_;
 
     // ROS interfaces

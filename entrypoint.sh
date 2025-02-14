@@ -21,7 +21,7 @@ sleep 10
 ros2 launch mavros px4.launch fcu_url:="udp://:14540@127.0.0.1:14557" &
 
 # Wait for MAVROS to start
-sleep 10
+sleep 15
 
 ros2 param set /mavros/param  NAV_DLL_ACT 0
 ros2 param set /mavros/param  COM_RC_IN_MODE 4

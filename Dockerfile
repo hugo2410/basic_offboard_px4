@@ -127,3 +127,20 @@ RUN pip install opencv-contrib-python==4.6.0.66 &&\
     pip install "numpy<2" &&\
     pip install transforms3d &&\
     pip install seaborn
+
+# Copy the mission_control code into the container
+COPY src /home/ubuntu/ros_ws/src
+
+# Set permissions for the workspace directory
+RUN sudo chown -R ubuntu:ubuntu /home/ubuntu/ros_ws
+
+# Set up environment
+RUN bash -c 'echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc' && \
+    bash -c 'echo "source /opt/ros/humble/setup.sh" >> ~/.profile'
+
+
+# Set entrypoint
+USER root
+COPY entrypoint.sh /home/ubuntu/entrypoint.sh
+RUN chmod +x /home/ubuntu/entrypoint.sh
+USER ${USER}

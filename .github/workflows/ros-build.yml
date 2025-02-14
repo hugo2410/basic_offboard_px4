@@ -1,0 +1,30 @@
+name: Build and Test ROS Nodes
+
+on:
+  workflow_run:
+    workflows:
+      - Build and Store Container  # Name of the dependent workflow
+    types:
+      - completed  # Trigger only after the dependent workflow completes
+
+jobs:
+  build-and-test:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # Run only if the dependent workflow succeeds
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Pull the Docker image built and pushed by the Build and Store Container workflow
+      - name: Pull Docker image
+        run: |
+          docker pull ghcr.io/${{ github.repository_owner }}/${{ github.event.workflow_run.head_commit.environment.repo_name }}:${{ github.event.workflow_run.head_commit.environment.branch_name }}-${{ github.event.workflow_run.head_commit.environment.short_commit_hash }}
+
+      # Run the container with mounted source code
+      - name: Build and Test in Container
+        run: |
+          docker run --rm -v $(pwd):/workspace -w /workspace \
+          ghcr.io/${{ github.repository_owner }}/${{ github.event.workflow_run.head_commit.environment.repo_name }}:${{ github.event.workflow_run.head_commit.environment.branch_name }}-${{ github.event.workflow_run.head_commit.environment.short_commit_hash }} \
+          bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && colcon build && colcon test"

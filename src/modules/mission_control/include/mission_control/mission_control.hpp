@@ -14,6 +14,7 @@
 class MissionControl : public rclcpp::Node {
 public:
     MissionControl();
+    void postConstructionSetup();
 
 private:
     // State variables

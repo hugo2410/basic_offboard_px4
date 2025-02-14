@@ -1,0 +1,45 @@
+name: Build and Store Container
+
+on:
+  push:  # Trigger on every push to any branch
+    branches: 
+      - '**'  # Match all branches
+  pull_request:  # Trigger on pull requests as well
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Extract repo name, branch name, and commit hash
+      - name: Extract variables
+        id: vars
+        run: |
+          REPO_NAME=$(echo "${GITHUB_REPOSITORY##*/}")  # Extract repository name
+          BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')  # Replace / with - in branch name
+          SHORT_COMMIT_HASH=$(git rev-parse --short HEAD)  # Get short commit hash
+          echo "repo_name=$REPO_NAME" >> $GITHUB_ENV
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "short_commit_hash=$SHORT_COMMIT_HASH" >> $GITHUB_ENV
+
+      # Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build the Docker image dynamically based on repo name
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/${{ env.repo_name }}:${{ env.branch_name }}-${{ env.short_commit_hash }} .
+
+      # Push the Docker image to the GitHub Container Registry
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/${{ env.repo_name }}:${{ env.branch_name }}-${{ env.short_commit_hash }}

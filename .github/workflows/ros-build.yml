@@ -2,10 +2,8 @@ name: Build and Test ROS Nodes
 
 on:
   workflow_run:
-    workflows:
-      - Build and Store Container  # Name of the dependent workflow
-    types:
-      - completed  # Trigger only after the dependent workflow completes
+    workflows: ["Build and Store Container"]
+    types: [completed]
 
 jobs:
   build-and-test:

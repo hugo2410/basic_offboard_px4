@@ -1,9 +1,6 @@
 name: Build and Store Container
 
 on:
-  push:  # Trigger on every push to any branch
-    branches: 
-      - '**'  # Match all branches
   pull_request:  # Trigger on pull requests as well
 
 jobs:

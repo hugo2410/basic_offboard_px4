@@ -1,6 +1,7 @@
 name: Build and Store Container
 
 on:
+  push:
   pull_request:  # Trigger on pull requests as well
 
 jobs:

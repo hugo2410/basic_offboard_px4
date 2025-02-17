@@ -7,19 +7,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      image_name: ${{ steps.vars.outputs.image_name }}
+      image_tag: ${{ steps.vars.outputs.image_tag }}
 
     steps:
       # Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Extract repo name, branch name, and commit hash
+      # Extract repo name, branch name, and commit hash, and set outputs for dependent workflows
       - name: Extract variables
         id: vars
         run: |
           REPO_NAME=$(echo "${GITHUB_REPOSITORY##*/}")  # Extract repository name
           BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')  # Replace / with - in branch name
           SHORT_COMMIT_HASH=$(git rev-parse --short HEAD)  # Get short commit hash
+
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${REPO_NAME}"
+          IMAGE_TAG="${BRANCH_NAME}-${SHORT_COMMIT_HASH}"
+
+          # Save to outputs for dependent workflows
+          echo "::set-output name=image_name::$IMAGE_NAME"
+          echo "::set-output name=image_tag::$IMAGE_TAG"
+
+          # Save to environment for local use
           echo "repo_name=$REPO_NAME" >> $GITHUB_ENV
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
           echo "short_commit_hash=$SHORT_COMMIT_HASH" >> $GITHUB_ENV
@@ -35,9 +47,9 @@ jobs:
       # Build the Docker image dynamically based on repo name
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/${{ env.repo_name }}:${{ env.branch_name }}-${{ env.short_commit_hash }} .
+          docker build -t "${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}" .
 
       # Push the Docker image to the GitHub Container Registry
       - name: Push Docker image
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/${{ env.repo_name }}:${{ env.branch_name }}-${{ env.short_commit_hash }}
+          docker push "${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}"

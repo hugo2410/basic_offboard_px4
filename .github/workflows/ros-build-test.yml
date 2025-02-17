@@ -1,0 +1,39 @@
+name: Build and Test ROS Nodes
+
+on:
+  workflow_run:
+    workflows: ["Build and Store Container"]
+    types: [completed]
+
+jobs:
+  build-and-test:
+    # Run only if the "Build and Store Container" workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2) Pull the Docker image from the outputs of the previous workflow
+      - name: Pull Docker image
+        run: |
+          IMAGE_NAME="${{ github.event.workflow_run.jobs.build.outputs.image_name }}"
+          IMAGE_TAG="${{ github.event.workflow_run.jobs.build.outputs.image_tag }}"
+          
+          echo "Pulling $IMAGE_NAME:$IMAGE_TAG ..."
+          docker pull "$IMAGE_NAME:$IMAGE_TAG"
+
+      # 3) Run the container with mounted source code and execute colcon build and test inside ~/ros_ws
+      - name: Build and Test in Container
+        run: |
+          IMAGE_NAME="${{ github.event.workflow_run.jobs.build.outputs.image_name }}"
+          IMAGE_TAG="${{ github.event.workflow_run.jobs.build.outputs.image_tag }}"
+
+          # Run the container and ensure the commands are executed in ~/ros_ws
+          docker run --rm \
+            -v "$(pwd)":/root/ros_ws \  # Mount the source code to ~/ros_ws inside the container
+            -w /root/ros_ws \         # Set the working directory to ~/ros_ws
+            "$IMAGE_NAME:$IMAGE_TAG" \
+            bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && colcon build && colcon test"

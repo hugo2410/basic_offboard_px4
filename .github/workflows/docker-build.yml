@@ -7,36 +7,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # 1) Declare the outputs you want to use in the second workflow
     outputs:
       image_name: ${{ steps.vars.outputs.image_name }}
       image_tag: ${{ steps.vars.outputs.image_tag }}
 
     steps:
-      # Checkout the code
+      # 2) Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Extract repo name, branch name, and commit hash, and set outputs for dependent workflows
+      # 3) Extract repo name, branch name, and commit hash
       - name: Extract variables
         id: vars
         run: |
-          REPO_NAME=$(echo "${GITHUB_REPOSITORY##*/}")  # Extract repository name
-          BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')  # Replace / with - in branch name
-          SHORT_COMMIT_HASH=$(git rev-parse --short HEAD)  # Get short commit hash
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"  # e.g. "my-repo"
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          BRANCH_NAME="${BRANCH_NAME//\//-}"         # Replace / with -
+          SHORT_COMMIT_HASH=$(git rev-parse --short HEAD)
 
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${REPO_NAME}"
+          # Print them to the console for debugging
+          echo "Repo name = $REPO_NAME"
+          echo "Branch name = $BRANCH_NAME"
+          echo "Short commit hash = $SHORT_COMMIT_HASH"
+
+          # 4) Construct the image name and tag
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY_OWNER}/${REPO_NAME}"
           IMAGE_TAG="${BRANCH_NAME}-${SHORT_COMMIT_HASH}"
 
-          # Save to outputs for dependent workflows
+          # 5) Set output for downstream workflow
           echo "::set-output name=image_name::$IMAGE_NAME"
           echo "::set-output name=image_tag::$IMAGE_TAG"
 
-          # Save to environment for local use
-          echo "repo_name=$REPO_NAME" >> $GITHUB_ENV
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "short_commit_hash=$SHORT_COMMIT_HASH" >> $GITHUB_ENV
-
-      # Log in to GitHub Container Registry
+      # 6) Log in to GitHub Container Registry
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -44,12 +48,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build the Docker image dynamically based on repo name
+      # 7) Build the Docker image dynamically based on repo name
       - name: Build Docker image
         run: |
-          docker build -t "${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}" .
+          docker build \
+            -t ${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }} \
+            .
 
-      # Push the Docker image to the GitHub Container Registry
+      # 8) Push the Docker image to the GitHub Container Registry
       - name: Push Docker image
         run: |
-          docker push "${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}"
+          docker push ${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}

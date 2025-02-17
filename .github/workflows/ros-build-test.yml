@@ -1,0 +1,46 @@
+name: Build and Test ROS Nodes
+
+on:
+  workflow_run:
+    workflows: ["Build and Store Container"]  # This must match the name of the parent workflow exactly
+    types: [completed]
+
+jobs:
+  build-and-test:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # Run only if the dependent workflow succeeds
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Define and echo the Docker image name and tag
+      - name: Define Docker image details
+        id: image-details
+        run: |
+          # Construct the Docker image name and tag dynamically
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ github.event.workflow_run.head_commit.environment.repo_name }}"
+          IMAGE_TAG="${{ github.event.workflow_run.head_commit.environment.branch_name }}-${{ github.event.workflow_run.head_commit.environment.short_commit_hash }}"
+          
+          # Save the image details to outputs
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+          
+          # Echo the image details for debugging
+          echo "Docker Image Name: ${IMAGE_NAME}"
+          echo "Docker Image Tag: ${IMAGE_TAG}"
+
+      # Pull the Docker image
+      - name: Pull Docker image
+        run: |
+          echo "Attempting to pull Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
+          docker pull "${IMAGE_NAME}:${IMAGE_TAG}"
+
+      # Run the container with mounted source code
+      - name: Build and Test in Container
+        run: |
+          echo "Running the container: ${IMAGE_NAME}:${IMAGE_TAG}"
+          docker run --rm -v $(pwd):/workspace -w /workspace \
+          "${IMAGE_NAME}:${IMAGE_TAG}" \
+          bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && colcon build && colcon test"

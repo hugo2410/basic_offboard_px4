@@ -23,14 +23,14 @@ jobs:
         run: |
           # Extract the repository name
           REPO_NAME="${GITHUB_REPOSITORY##*/}"  # e.g., "my-repo"
-          
+
           # Extract the branch name and replace any "/" with "-"
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          BRANCH_NAME="${BRANCH_NAME//\//-}"   
-          
+          BRANCH_NAME="${BRANCH_NAME//\//-}"
+
           # Retrieve the short commit hash for versioning
           SHORT_COMMIT_HASH=$(git rev-parse --short HEAD)
-          
+
           echo "Repo name = $REPO_NAME"
           echo "Branch name = $BRANCH_NAME"
           echo "Short commit hash = $SHORT_COMMIT_HASH"

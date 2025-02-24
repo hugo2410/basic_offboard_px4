@@ -1,46 +1,49 @@
-name: Build and Store Container
+name: Build, Push, and Run colcon Build
 
 on:
+  pull_request:       # Trigger on pull requests
   push:
-  pull_request:  # Trigger on pull requests as well
+    branches:
+      - main         # Trigger on pushes to main branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    # 1) Declare the outputs you want to use in the second workflow
     outputs:
-      image_name: ${{ steps.vars.outputs.image_name }}
-      image_tag: ${{ steps.vars.outputs.image_tag }}
-
+      image_name: ${{ steps.extract.outputs.image_name }}
+      image_tag: ${{ steps.extract.outputs.image_tag }}
     steps:
-      # 2) Checkout the code
-      - name: Checkout code
+      # 1. Checkout your repository
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 3) Extract repo name, branch name, and commit hash
-      - name: Extract variables
-        id: vars
+      # 2. Extract variables (repo name, branch, commit hash) and create image name and tag
+      - name: Extract Variables
+        id: extract
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY##*/}"  # e.g. "my-repo"
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}" 
-          BRANCH_NAME="${BRANCH_NAME//\//-}"         # Replace / with -
+          # Extract the repository name
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"  # e.g., "my-repo"
+          
+          # Extract the branch name and replace any "/" with "-"
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          BRANCH_NAME="${BRANCH_NAME//\//-}"   
+          
+          # Retrieve the short commit hash for versioning
           SHORT_COMMIT_HASH=$(git rev-parse --short HEAD)
           
-          # Print them to the console for debugging
           echo "Repo name = $REPO_NAME"
           echo "Branch name = $BRANCH_NAME"
           echo "Short commit hash = $SHORT_COMMIT_HASH"
 
-          # 4) Construct the image name and tag
+          # Construct the image name and image tag
           IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY_OWNER}/${REPO_NAME}"
           IMAGE_TAG="${BRANCH_NAME}-${SHORT_COMMIT_HASH}"
 
-          # 5) Set output for downstream workflow
+          # Export the outputs for downstream jobs
           echo "::set-output name=image_name::$IMAGE_NAME"
           echo "::set-output name=image_tag::$IMAGE_TAG"
 
-      # 6) Log in to GitHub Container Registry
+      # 3. Log in to GitHub Container Registry
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -48,14 +51,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 7) Build the Docker image dynamically based on repo name
-      - name: Build Docker image
+      # 4. Build the Docker image and tag it appropriately
+      - name: Build Docker Image
         run: |
-          docker build \
-            -t ${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }} \
-            .
+          docker build -t ${{ steps.extract.outputs.image_name }}:${{ steps.extract.outputs.image_tag }} .
 
-      # 8) Push the Docker image to the GitHub Container Registry
-      - name: Push Docker image
+      # 5. Push the Docker image to GitHub Container Registry
+      - name: Push Docker Image
         run: |
-          docker push ${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}
+          docker push ${{ steps.extract.outputs.image_name }}:${{ steps.extract.outputs.image_tag }}
+
+  colcon_build:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      # 6. Log in again to GitHub Container Registry (to pull the image)
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 7. Pull the Docker image using the outputs from the build job
+      - name: Pull Docker Image
+        run: |
+          docker pull ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }}
+
+      # 8. Run colcon build inside the container
+      - name: Run colcon build in Docker Container
+        run: |
+          docker run --rm -w /root/ros_ws \
+            ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} \
+            colcon build

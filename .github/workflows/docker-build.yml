@@ -86,6 +86,6 @@ jobs:
       # 8. Run colcon build inside the container
       - name: Run colcon build in Docker Container
         run: |
-          docker run --rm -w /root/ros_ws \
+          docker run --rm -w /home/ubuntu/ros_ws \
             ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} \
-            colcon build
+            bash -c "source /opt/ros/foxy/setup.bash && colcon build"

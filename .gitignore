@@ -1,0 +1,13 @@
+# VSCode settings
+.vscode
+
+# Distribution / packaging
+.Python
+env/
+build/
+dist/
+*.log
+
+# ROS
+devel/
+.catkin_workspace

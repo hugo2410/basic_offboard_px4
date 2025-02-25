@@ -88,4 +88,4 @@ jobs:
         run: |
           docker run --rm -w /home/ubuntu/ros_ws \
             ${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }} \
-            bash -c "source /opt/ros/foxy/setup.bash && colcon build"
+            bash -c "source /opt/ros/humble/setup.bash && colcon build"

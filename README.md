@@ -1,4 +1,4 @@
-# basic_offboard_px4
+# Offboard PX4 sim using MAVROS and Gazebo
 
 ![CI Build](https://github.com/hugo2410/basic_offboard_px4/actions/workflows/docker-build.yml/badge.svg)
 [![GHCR Latest Image](https://img.shields.io/github/v/tag/hugo2410/basic_offboard_px4?label=GHCR%20Latest&logo=docker)](https://github.com/hugo2410/packages/container/basic_offboard_px4)

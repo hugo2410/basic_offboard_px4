@@ -1,7 +1,7 @@
 # basic_offboard_px4
 
 ![CI Build](https://github.com/hugo2410/basic_offboard_px4/actions/workflows/docker-build.yml/badge.svg)
-![GHCR Status](https://ghcr-badge.herokuapp.com/hugo2410/basic_offboard_px4/tags.svg)
+[![GHCR Latest Image](https://img.shields.io/github/v/tag/hugo2410/basic_offboard_px4?label=GHCR%20Latest&logo=docker)](https://github.com/hugo2410/packages/container/basic_offboard_px4)
 
 
 A Drone Simulation Environment based on PX4, MAVROS, ROS 2, Gazebo, and Docker

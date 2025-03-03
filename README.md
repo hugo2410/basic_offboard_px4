@@ -1,10 +1,8 @@
-# Offboard control of multicopter drone using PX4 in Gazebo and ROS2 
+# Offboard control of multicopter drone using PX4 in Gazebo and ROS2
 
 ![CI Build](https://github.com/hugo2410/basic_offboard_px4/actions/workflows/docker-build.yml/badge.svg)
 
-[![GHCR Latest Image](https://img.shields.io/badge/GHCR-main-fe0da35-blue?logo=docker)](https://github.com/hugo2410/basic_offboard_px4/pkgs/container/basic_offboard_px4)
-
-
+[![GHCR Latest Image](https://img.shields.io/badge/GHCR-main--latest-blue?logo=docker)](https://github.com/hugo2410/basic_offboard_px4/pkgs/container/basic_offboard_px4)
 
 A Drone Simulation Environment based on PX4, MAVROS, ROS 2, Gazebo, and Docker
 

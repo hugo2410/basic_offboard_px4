@@ -2,7 +2,7 @@
 
 ![CI Build](https://github.com/hugo2410/basic_offboard_px4/actions/workflows/docker-build.yml/badge.svg)
 
-[![GHCR Latest Image](https://github.com/hugo2410/basic_offboard_px4/pkgs/container/basic_offboard_px4/main-3aa29c1
+[![GHCR Latest Image](https://img.shields.io/badge/GHCR-main--latest-blue?logo=docker)](https://github.com/hugo2410/basic_offboard_px4/pkgs/container/basic_offboard_px4)
 
 
 

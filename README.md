@@ -1,6 +1,6 @@
 # basic_offboard_px4
 
-![CI Build](https://github.com/hugo2410/basic_offboard_px4/actions/workflows/code-coverage.yml/badge.svg)
+![CI Build](https://github.com/YOUR_GITHUB_USERNAME/basic_offboard_px4/actions/workflows/docker-build.yml/badge.svg)
 ![GHCR Status](https://ghcr-badge.herokuapp.com/hugo2410/basic_offboard_px4/tags.svg)
 
 

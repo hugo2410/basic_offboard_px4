@@ -1,4 +1,4 @@
-# basic_offboard_px4
+# Offboard control of multicopter drone using PX4 in Gazebo and ROS2 
 
 ![CI Build](https://github.com/hugo2410/basic_offboard_px4/actions/workflows/docker-build.yml/badge.svg)
 

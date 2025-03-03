@@ -92,7 +92,7 @@ jobs:
           IMAGE_URL="https://github.com/${{ github.repository }}/pkgs/container/basic_offboard_px4?tag=$TAG"
 
           # Update the badge in README.md
-          sed -i "s|!\[GHCR Latest Image\](.*)|![GHCR Latest Image](https://img.shields.io/badge/GHCR-$TAG-blue?logo=docker)|g" README.md
+          sed -i "s|!\[GHCR Latest Image\](.*)|![GHCR Latest Image](https://img.shields.io/badge/GHCR-$TAG-blue?logo=docker)](https://github.com/hugo2410/basic_offboard_px4/pkgs/container/basic_offboard_px4)|g" README.md
 
           # Commit and push changes
           git config --global user.name "github-actions[bot]"
